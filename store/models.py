@@ -24,13 +24,12 @@ class Product(models.Model): # Tip: F2 -> rename everywhere -> but notice if you
     # sku = models.CharField(max_length=255, primary_key=True) # this would stop Django from making a primary key and use this instead
     title = models.CharField(max_length=255)
     # slug = models.SlugField() # note: you can't add a non-nullable slug field without a default
-    slug = models.SlugField(default='-')
+    slug = models.SlugField()
     # slug = models.SlugField(null=True)
     description = models.TextField()
     unit_price = models.DecimalField(max_digits=6, decimal_places=2) # always use for monetary values (bc floats have rounding issues)
     inventory = models.IntegerField()
-    last_update_at = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    last_update = models.DateTimeField(auto_now=True)
     collection = models.ForeignKey(to='Collection', on_delete=models.PROTECT) # you can pass to='string' if the parent class is below the child class
     # PROTECT => if you delete a collection - you don't delete all the products in that collection
     # collection = models.ForeignKey(to=Collection, on_delete=models.SET_NULL)
@@ -54,7 +53,7 @@ class Customer(models.Model):
     phone = models.CharField(max_length=255)
     membership = models.CharField(max_length=1, choices=MEMBERSHIP_CHOICES, default=MEMBERSHIP_BRONZE)
     # address = ... # Django automatically handled this in the Address class
-    birth_date = models.DateTimeField(null=True)
+    birth_date = models.DateField(null=True)
 
     class Meta:
         # where we define the models metadata
@@ -76,7 +75,7 @@ class Order(models.Model):
         (FAILED_STATUS, 'Failed')
     ]
     placed_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # updated_at = models.DateTimeField(auto_now=True)
     payment_status = models.CharField(max_length=1, choices=PAYMENT_STATUS_CHOICES, default=PENDING_STATUS)
     customer = models.ForeignKey(to=Customer, on_delete=models.PROTECT) # protect => if the customer is deleted the orders are not
 
