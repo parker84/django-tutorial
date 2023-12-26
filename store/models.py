@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.validators import MinValueValidator
+# see more here: https://docs.djangoproject.com/en/5.0/ref/validators/
 
 # Create your models here.
 
@@ -19,6 +21,13 @@ class Collection(models.Model):
         related_name='+' # => no reverse relationship created, without this we get an issue because the collections name is already used on the product model
     ) 
 
+    def __str__(self) -> str:
+        collection_dict = {'title': self.title, 'featured_product': self.featured_product}
+        return f"Collection({str(collection_dict)}"
+
+    class Meta():
+        ordering = ['title']
+
 class Product(models.Model): # Tip: F2 -> rename everywhere -> but notice if you do this the 'Product' above won't get renamed
     # Django automatically creates an ID field that is a primary key
     # sku = models.CharField(max_length=255, primary_key=True) # this would stop Django from making a primary key and use this instead
@@ -26,17 +35,35 @@ class Product(models.Model): # Tip: F2 -> rename everywhere -> but notice if you
     # slug = models.SlugField() # note: you can't add a non-nullable slug field without a default
     slug = models.SlugField()
     # slug = models.SlugField(null=True)
-    description = models.TextField()
-    unit_price = models.DecimalField(max_digits=6, decimal_places=2) # always use for monetary values (bc floats have rounding issues)
-    inventory = models.IntegerField()
+    description = models.TextField(null=True, blank=True)
+    unit_price = models.DecimalField(
+        max_digits=6, 
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0.01)
+        ]
+    ) # always use for monetary values (bc floats have rounding issues)
+    inventory = models.IntegerField(
+        validators=[
+            MinValueValidator(0)
+        ]
+    )
     last_update = models.DateTimeField(auto_now=True)
     collection = models.ForeignKey(to='Collection', on_delete=models.PROTECT) # you can pass to='string' if the parent class is below the child class
     # PROTECT => if you delete a collection - you don't delete all the products in that collection
     # collection = models.ForeignKey(to=Collection, on_delete=models.SET_NULL)
     promotions = models.ManyToManyField(
         to=Promotion, 
+        null=True,
+        blank=True
         # related_name='products' # this will change the related name on product to product_set
     ) # plural because there can be multiple promotions applied to a product
+
+    def __str__(self) -> str:
+        return f"Product({str(self.__dict__)}"
+
+    class Meta():
+        ordering = ['title']
 
 class Customer(models.Model):
     MEMBERSHIP_BRONZE = 'B'
@@ -63,7 +90,10 @@ class Customer(models.Model):
             models.Index(fields=['last_name', 'first_name'])
         ]
         # note: best not to mix migrations bc the names get shitty
+        ordering = ['first_name', 'last_name']
 
+    def __str__(self) -> str:
+        return f'Customer({str(self.__dict__)})'
 
 class Order(models.Model):
     PENDING_STATUS = 'P'

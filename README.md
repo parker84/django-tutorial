@@ -22,12 +22,18 @@ python ./manage.py makemigrations store --empty
 python ./manage.py migrate
 python ./manage.py migrate store 0005 # revert back to prev migration
 python ./manage.py sqlmigrate <migration> # show the actual SQL code
+
+#--------------admin
+python manage.py createsuperuser
+# reset password
+python manage.py changepassword <username>
 ```
 
 ## Handy VSCode Shortcuts
 - F2 -> rename everywhere
 - Cmd+T -> search for a symbol (symbol = class / function / variable)
 - Cmd+Shift+O -> search for a symbol in a file
+- Ctrl+'-' -> jump back to where you were in the code
 
 ## Definitions
 
