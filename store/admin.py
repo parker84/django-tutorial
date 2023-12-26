@@ -1,7 +1,5 @@
 from django.contrib import admin, messages
 from .models import Collection, Product, Customer, Order, OrderItem
-from tags.models import TaggedItem
-from django.contrib.contenttypes.admin import GenericTabularInline
 from django.db.models.aggregates import Count
 from django.utils.html import format_html, urlencode
 from django.urls import reverse
@@ -20,17 +18,12 @@ class InventoryFilter(admin.SimpleListFilter):
         if self.value() == '<10':
             return queryset.filter(inventory__lt=10)
 
-class TagInline(GenericTabularInline):
-    model = TaggedItem
-    autocomplete_fields = ['tag']
-
 # see more here: https://docs.djangoproject.com/en/5.0/ref/contrib/admin/#modeladmin-objects
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     prepopulated_fields = {
         'slug': ['title']
     }
-    inlines = [TagInline]
     autocomplete_fields = ['collection'] # useful if you have too many fields to use a dropdown effectively
     # but we need to add 
     # fields = ['title', 'slug'] # fields for creating a new product
