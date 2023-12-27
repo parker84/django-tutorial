@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
+    'rest_framework',
     'debug_toolbar',
     'playground',
     'tags',
@@ -139,3 +140,8 @@ INTERNAL_IPS = [
     "127.0.0.1",
     # ...
 ]
+
+
+REST_FRAMEWORK = {
+    'COERCE_DECIMAL_TO_STRING': False
+}

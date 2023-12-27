@@ -23,5 +23,6 @@ admin.site.index_title = 'Admin'
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('playground/', include('playground.urls')), # routes all requests that start with playground to our playground urls
+    path('store/', include('store.urls')), # routes all requests that start with store to our store module
     path("__debug__/", include("debug_toolbar.urls")),
 ]

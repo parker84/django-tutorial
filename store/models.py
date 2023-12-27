@@ -27,6 +27,8 @@ class Collection(models.Model):
 
     class Meta():
         ordering = ['title']
+    
+    
 
 class Product(models.Model): # Tip: F2 -> rename everywhere -> but notice if you do this the 'Product' above won't get renamed
     # Django automatically creates an ID field that is a primary key
@@ -49,7 +51,7 @@ class Product(models.Model): # Tip: F2 -> rename everywhere -> but notice if you
         ]
     )
     last_update = models.DateTimeField(auto_now=True)
-    collection = models.ForeignKey(to='Collection', on_delete=models.PROTECT) # you can pass to='string' if the parent class is below the child class
+    collection = models.ForeignKey(to='Collection', on_delete=models.PROTECT, related_name='products') # you can pass to='string' if the parent class is below the child class
     # PROTECT => if you delete a collection - you don't delete all the products in that collection
     # collection = models.ForeignKey(to=Collection, on_delete=models.SET_NULL)
     promotions = models.ManyToManyField(
@@ -111,7 +113,7 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(to=Order, on_delete=models.PROTECT) # now we can have multiple items in an order
-    product = models.ForeignKey(to=Product, on_delete=models.PROTECT)
+    product = models.ForeignKey(to=Product, on_delete=models.PROTECT, related_name='orderitems')
     quantity = models.PositiveSmallIntegerField()
     unit_price = models.DecimalField(max_digits=6, decimal_places=2) # store this because the price of products can change over time
 

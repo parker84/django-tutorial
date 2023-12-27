@@ -81,6 +81,55 @@ python manage.py changepassword <username>
   - `query_set.filter().filter().order_by()`
   - then at some point when we iterate over it or slice it or ... then it will be evaluated
 
+### RESTful APIs
+- API = interface that client apps can use to get or save data
+  - like a remote control with a bunch of buttons for different functionality
+- Each endpoint will have it's own functionality
+  - ex: get or save products, orders, shopping carts, ...
+- REST = short for Representational State Transfer
+  - In practical terms its a set of rules for clients and servers to communicate over the web
+  - These rules help us build systems that are:
+    -  Fast
+    -  Scalable
+    -  Reliable
+    -  Easy to understand
+    -  Easy to change
+-  Resources = like an object in our application (product, collection, shopping cart, ...)
+   - Available on the web and client applications can access them using a URL, Exs:
+   - http://website.com/products
+   - http://website.com/products/1
+   - http://website.com/products/1/reviews
+   - http://website.com/products/1/reviews/1
+   - generally best not to nest beyond this
+- Resource Representations
+  - Exs: HTML, XML, JSON
+  - But these aren't the representations on server, we transfer into this so the clients can understand the output
+- HTTP Methds
+  - When building a RESTful API we expose 1+ endpoints for clients
+  - Each endpoint can support multiple operations (ex: read / write / ...)
+  - HTTP Methods
+    - Get (read)
+    - Post (write)
+    - Put (update)
+    - Patch (updating part of it)
+    - Delete (delete)
+- Create a Product
+  - Send a post request to the `/products` endpoint
+  - Specify the product details in the body of the request
+    - `{"title": "", "price": 10}`
+- Updating a Product
+  - Update all properties => `PUT /products/1`
+  - Update some properties => `PATCH /products/1`
+- Deleting a Product
+  - `DELETE /products/1`
+- Serializers
+  - converts a model instance to a dictionary
+  - options for serializing
+    - Primary Key
+    - String
+    - Nested Object
+    - Hyperlink
+
 ## Recommendations
 - Only use SQLite for development
 
