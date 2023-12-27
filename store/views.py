@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from rest_framework.decorators import api_view, APIView
 from rest_framework.response import Response
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from .models import Product, Collection
 from.serializers import ProductSerializer, CollectionSerializer
 from rest_framework import status
@@ -11,35 +11,56 @@ from django.db.models.aggregates import Count
 
 # Create your views here.
 
-class ProductList(APIView):
+# class ProductList(APIView):
 
-    def get(self, request):
-        queryset = Product.objects.select_related('collection').all()
-        serializer = ProductSerializer(queryset, many=True, context={'request':request})
-        return Response(serializer.data)
+    # def get(self, request):
+    #     queryset = Product.objects.select_related('collection').all()
+    #     serializer = ProductSerializer(queryset, many=True, context={'request':request})
+    #     return Response(serializer.data)
     
-    def post(self, request):
-        serializer = ProductSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(status=status.HTTP_201_CREATED)
+    # def post(self, request):
+    #     serializer = ProductSerializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save()
+    #     return Response(status=status.HTTP_201_CREATED)
 
-class ProductDetail(APIView):
+class ProductList(ListCreateAPIView):
 
-    def get(self, request, id):
-        product = get_object_or_404(Product, pk=id)
-        serializer = ProductSerializer(product) # convert to dict
-        return Response(serializer.data) # json rendering will be handled under the hood
+    # because we didn't have any extra logic in those functions
+    # we can just define these directly:
+    queryset = Product.objects.select_related('collection').all()
+    serializer_class = ProductSerializer
+
+    # def get_queryset(self):
+    #     return Product.objects.select_related('collection').all()
     
-    def post(self, request, id):
-        product = get_object_or_404(Product, pk=id)
-        serializer = ProductSerializer(data=request.data, instance=product)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    # def get_serializer_class(self):
+    #     return ProductSerializer
 
-    def delete(self, request, id):
-        product = get_object_or_404(Product, pk=id)
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+# class ProductDetail(APIView):
+class ProductDetail(RetrieveUpdateDestroyAPIView):
+
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    # lookup_field = 'id' # can do this if we don't want to use pk default
+
+    # def get(self, request, id):
+    #     product = get_object_or_404(Product, pk=id)
+    #     serializer = ProductSerializer(product) # convert to dict
+    #     return Response(serializer.data) # json rendering will be handled under the hood
+    
+    # def post(self, request, id):
+    #     product = get_object_or_404(Product, pk=id)
+    #     serializer = ProductSerializer(data=request.data, instance=product)
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save()
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, pk):
+        product = get_object_or_404(Product, pk=pk)
         if product.orderitems.count() > 0:
             return Response(
                 {'error': 'Product cannot be deleted because its associated with orderitem'},
@@ -48,22 +69,19 @@ class ProductDetail(APIView):
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def collection_detail(request, id):
-    collection = get_object_or_404(
-        Collection.objects.annotate(
-            count_products=Count('products')
-        ), pk=id
-    ) # this also adds a detail on the response
-    if request.method == 'GET':
-        serializer = CollectionSerializer(collection) # convert to dict
-        return Response(serializer.data) # json rendering will be handled under the hood
-    elif request.method == 'PUT':
-        serializer = CollectionSerializer(data=request.data, instance=collection)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    elif request.method == 'DELETE':
+class CollectionDetail(RetrieveUpdateDestroyAPIView):
+
+    queryset = Collection.objects.annotate(
+        count_products=Count('products')
+    )
+    serializer_class = CollectionSerializer
+
+    def delete(self, request, pk):
+        collection = get_object_or_404(
+            Collection.objects.annotate(
+                count_products=Count('products')
+            ), pk=pk
+        )
         if collection.products.count() > 0:
             return Response(
                 {'error': f'Collection cannot be deleted because its associated with {collection.products.count()} products'},
@@ -72,17 +90,11 @@ def collection_detail(request, id):
         collection.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class CollectionList(ListCreateAPIView):
+    queryset = Collection.objects.annotate(
+        count_products=Count('products')
+    ).all()
+    serializer_class = CollectionSerializer
 
-@api_view(['GET', 'POST'])
-def collection_list(request):
-    if request.method == 'GET':
-        queryset = Collection.objects.annotate(
-            count_products=Count('products')
-        ).all()
-        serializer = CollectionSerializer(queryset, many=True, context={'request':request})
-        return Response(serializer.data)
-    elif request.method == 'POST':
-        serializer = CollectionSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+    def get_serializer_context(self):
+        return {'request': self.request}
