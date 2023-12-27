@@ -1,8 +1,19 @@
-from rest_framework.routers import DefaultRouter
 from . import views
-# map urls to view functions
+from rest_framework_nested import routers
 
-router = DefaultRouter()
-router.register('products', views.ProductViewSet)
+router = routers.DefaultRouter()
+router.register('products', views.ProductViewSet, basename='products')
 router.register('collections', views.CollectionViewSet)
-urlpatterns = router.urls
+
+products_router = routers.NestedDefaultRouter(
+    router, 
+    'products', 
+    lookup='product',
+)
+products_router.register(
+    prefix='reviews',
+    viewset=views.ReviewViewSet,
+    basename='product-reviews'
+)
+
+urlpatterns = router.urls + products_router.urls

@@ -132,6 +132,13 @@ python manage.py changepassword <username>
     - Nested Object
     - Hyperlink
 
+### Advanced API Concepts
+- Building an API:
+  1. Create a Serializer
+  2. Create a View
+  3. Register a route
+
+
 ## Recommendations
 - Only use SQLite for development
 

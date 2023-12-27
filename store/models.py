@@ -138,3 +138,14 @@ class CartItem(models.Model):
     product = models.ForeignKey(to=Product, on_delete=models.CASCADE) # delete product => removed from all shopping carts
     quantity = models.PositiveSmallIntegerField()
     cart = models.ForeignKey(to=Cart, on_delete=models.CASCADE) # enabling multiple items in a cart
+
+
+class Review(models.Model):
+    product = models.ForeignKey(
+        to=Product, 
+        on_delete=models.CASCADE, # => product deletion => review deletion
+        related_name='reviews' # => on the product class we'll have an attribute called reviews 
+    )
+    name = models.CharField(max_length=255)
+    description = models.TextField() # => no limit, people can leave longer reviews
+    date = models.DateField(auto_now_add=True) # automatically set when the review is created
