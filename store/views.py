@@ -4,62 +4,44 @@ from rest_framework.decorators import api_view, APIView
 from rest_framework.response import Response
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from .models import Product, Collection
+from .models import OrderItem, Product, Collection
+from rest_framework.viewsets import ModelViewSet
 from.serializers import ProductSerializer, CollectionSerializer
 from rest_framework import status
 from django.db.models.aggregates import Count
 
 # Create your views here.
 
-class ProductList(ListCreateAPIView):
-
-    queryset = Product.objects.select_related('collection').all()
-    serializer_class = ProductSerializer
-
-    def get_serializer_context(self):
-        return {'request': self.request}
-
-class ProductDetail(RetrieveUpdateDestroyAPIView):
-
+class ProductViewSet(ModelViewSet): # other options: ReadOnlyModelViewSet
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-
-    def delete(self, request, pk):
-        product = get_object_or_404(Product, pk=pk)
-        if product.orderitems.count() > 0:
+    
+    def get_serializer_context(self):
+        return {'request': self.request}
+    
+    def destroy(self, request, *args, **kwargs):
+        if OrderItem.objects.filter(product_id=kwargs['pk']).count() > 0:
             return Response(
                 {'error': 'Product cannot be deleted because its associated with orderitem'},
                 status=status.HTTP_405_METHOD_NOT_ALLOWED
             ) # see more status codes here: https://www.webfx.com/web-development/glossary/http-status-codes/
-        product.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return super().destroy(request, *args, **kwargs)
 
-class CollectionDetail(RetrieveUpdateDestroyAPIView):
 
+class CollectionViewSet(ModelViewSet):
     queryset = Collection.objects.annotate(
         count_products=Count('products')
     )
     serializer_class = CollectionSerializer
 
-    def delete(self, request, pk):
-        collection = get_object_or_404(
-            Collection.objects.annotate(
-                count_products=Count('products')
-            ), pk=pk
-        )
-        if collection.products.count() > 0:
-            return Response(
-                {'error': f'Collection cannot be deleted because its associated with {collection.products.count()} products'},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED
-            ) # see more status codes here: https://www.webfx.com/web-development/glossary/http-status-codes/
-        collection.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-class CollectionList(ListCreateAPIView):
-    queryset = Collection.objects.annotate(
-        count_products=Count('products')
-    ).all()
-    serializer_class = CollectionSerializer
-
     def get_serializer_context(self):
         return {'request': self.request}
+
+    def destroy(self, request, *args, **kwargs):
+        product_count = Product.objects.filter(collection_id=kwargs['pk']).count()
+        if product_count > 0:
+            return Response(
+                {'error': f'Collection cannot be deleted because its associated with {product_count} products'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED
+            ) # see more status codes here: https://www.webfx.com/web-development/glossary/http-status-codes/
+        return super().destroy(request, *args, **kwargs)
