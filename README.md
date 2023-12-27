@@ -34,6 +34,8 @@ python manage.py changepassword <username>
 - Cmd+T -> search for a symbol (symbol = class / function / variable)
 - Cmd+Shift+O -> search for a symbol in a file
 - Ctrl+'-' -> jump back to where you were in the code
+- Cmd+click -> lookup the definition of a function / class (including imported ones)
+- Cmd+Shift+O -> see all the symbols in a module
 
 ## Definitions
 
