@@ -11,53 +11,18 @@ from django.db.models.aggregates import Count
 
 # Create your views here.
 
-# class ProductList(APIView):
-
-    # def get(self, request):
-    #     queryset = Product.objects.select_related('collection').all()
-    #     serializer = ProductSerializer(queryset, many=True, context={'request':request})
-    #     return Response(serializer.data)
-    
-    # def post(self, request):
-    #     serializer = ProductSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save()
-    #     return Response(status=status.HTTP_201_CREATED)
-
 class ProductList(ListCreateAPIView):
 
-    # because we didn't have any extra logic in those functions
-    # we can just define these directly:
     queryset = Product.objects.select_related('collection').all()
     serializer_class = ProductSerializer
-
-    # def get_queryset(self):
-    #     return Product.objects.select_related('collection').all()
-    
-    # def get_serializer_class(self):
-    #     return ProductSerializer
 
     def get_serializer_context(self):
         return {'request': self.request}
 
-# class ProductDetail(APIView):
 class ProductDetail(RetrieveUpdateDestroyAPIView):
 
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    # lookup_field = 'id' # can do this if we don't want to use pk default
-
-    # def get(self, request, id):
-    #     product = get_object_or_404(Product, pk=id)
-    #     serializer = ProductSerializer(product) # convert to dict
-    #     return Response(serializer.data) # json rendering will be handled under the hood
-    
-    # def post(self, request, id):
-    #     product = get_object_or_404(Product, pk=id)
-    #     serializer = ProductSerializer(data=request.data, instance=product)
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save()
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, pk):
         product = get_object_or_404(Product, pk=pk)
