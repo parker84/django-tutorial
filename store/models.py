@@ -1,5 +1,11 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from uuid import uuid4
+from django.contrib import admin
+
+
+# from storefront import settings
+from django.conf import settings # more generalizable
 # see more here: https://docs.djangoproject.com/en/5.0/ref/validators/
 
 # Create your models here.
@@ -76,26 +82,38 @@ class Customer(models.Model):
         (MEMBERSHIP_SILVER, 'Silver'),
         (MEMBERSHIP_GOLD, 'Gold')
     ]
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
     phone = models.CharField(max_length=255)
     membership = models.CharField(max_length=1, choices=MEMBERSHIP_CHOICES, default=MEMBERSHIP_BRONZE)
     # address = ... # Django automatically handled this in the Address class
     birth_date = models.DateField(null=True)
+    user = models.OneToOneField(to=settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE) # one to one relationship with the built in user model
+
+    @admin.display(ordering='user__first_name')
+    def first_name(self):
+        return self.user.first_name
+
+    @admin.display(ordering='user__last_name')
+    def last_name(self):
+        return self.user.last_name
+    
+    @admin.display(ordering='user__email')
+    def email(self):
+        return self.user.email
 
     class Meta:
         # where we define the models metadata
         # options: https://docs.djangoproject.com/en/5.0/ref/models/options/
         # db_table = 'store_customers' # but not recommended to customize tablenames though - just use django defaults
-        indexes = [ # used to speed up queries
-            models.Index(fields=['last_name', 'first_name'])
-        ]
+        # indexes = [ # used to speed up queries
+        #     # models.Index(fields=['user__last_name', 'user__first_name'])
+        #     models.Index(fields=['last_name', 'first_name'])
+        # ]
         # note: best not to mix migrations bc the names get shitty
-        ordering = ['first_name', 'last_name']
+        ordering = ['user__first_name', 'user__last_name']
 
     def __str__(self) -> str:
-        return f'Customer({str(self.__dict__)})'
+        # return f'Customer({str(self.__dict__)})'
+        return f"Customer({self.user.first_name} {self.user.last_name})"
 
 class Order(models.Model):
     PENDING_STATUS = 'P'
@@ -110,6 +128,11 @@ class Order(models.Model):
     # updated_at = models.DateTimeField(auto_now=True)
     payment_status = models.CharField(max_length=1, choices=PAYMENT_STATUS_CHOICES, default=PENDING_STATUS)
     customer = models.ForeignKey(to=Customer, on_delete=models.PROTECT) # protect => if the customer is deleted the orders are not
+
+    class Meta:
+        permissions = [
+            ('cancel_orders', 'Can cancel orders'),
+        ]
 
 class OrderItem(models.Model):
     order = models.ForeignKey(to=Order, on_delete=models.PROTECT) # now we can have multiple items in an order
@@ -130,15 +153,19 @@ class Address(models.Model):
     customer = models.ForeignKey(to=Customer, on_delete=models.CASCADE)
 
 class Cart(models.Model):
-    # customer = models.ForeignKey(to=Customer, on_delete=models.SET_NULL) # he didn't include this
+    id = models.UUIDField(primary_key=True, default=uuid4) # notice we don't call uuid4 here, if we did that value would be hardcoded
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
 class CartItem(models.Model):
     product = models.ForeignKey(to=Product, on_delete=models.CASCADE) # delete product => removed from all shopping carts
     quantity = models.PositiveSmallIntegerField()
-    cart = models.ForeignKey(to=Cart, on_delete=models.CASCADE) # enabling multiple items in a cart
+    cart = models.ForeignKey(to=Cart, on_delete=models.CASCADE, related_name='items') # enabling multiple items in a cart
 
+    class Meta: 
+        unique_together = [ # ensure no duplicate products in the same cart
+            ['cart', 'product']
+        ]
 
 class Review(models.Model):
     product = models.ForeignKey(

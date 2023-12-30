@@ -3,13 +3,15 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 # from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin
+from rest_framework.viewsets import GenericViewSet
 
 from store.filters import ProductFilter
 from store.pagination import DefaultPageNumberPagination
 
-from .models import Collection, OrderItem, Product, Review
+from .models import Cart, CartItem, Collection, OrderItem, Product, Review
 
-from.serializers import ProductSerializer, CollectionSerializer, ReviewSerializer
+from.serializers import AddCartItemSerializer, CartItemSerializer, CartSerializer, ProductSerializer, CollectionSerializer, ReviewSerializer, UpdateCartItemSerializer
 from django.db.models.aggregates import Count
 from rest_framework import status
 
@@ -76,3 +78,33 @@ class ReviewViewSet(ModelViewSet):
         return Review.objects.filter(
             product_id=self.kwargs['product_pk']
         )
+
+# class CartViewSet(ModelViewSet): # don't want this because we don't want all carts to be exposed to an endpoint
+class CartViewSet(
+    CreateModelMixin,
+    RetrieveModelMixin, 
+    DestroyModelMixin, 
+    GenericViewSet
+): # don't want this because we don't want all carts to be exposed to an endpoint
+    serializer_class = CartSerializer
+    queryset = Cart.objects.prefetch_related('items__product').all() # prefetch
+
+class CartItemViewSet(ModelViewSet):
+    serializer_class = CartItemSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return AddCartItemSerializer
+        if self.request.method == 'PATCH': # no put requests bc we only want to update a single property
+            return UpdateCartItemSerializer
+        return CartItemSerializer
+
+    def get_queryset(self):
+        queryset = CartItem.objects.filter(
+            cart_id=self.kwargs['carts_pk']
+        ).select_related('product').all()
+        return queryset
+    
+    def get_serializer_context(self):
+        return {'cart_id': self.kwargs['carts_pk']} # then we can use the context object to pass this to the serializer

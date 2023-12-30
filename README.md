@@ -138,6 +138,50 @@ python manage.py changepassword <username>
   2. Create a View
   3. Register a route
 
+### Authentication
+- Middleware = a function that takes a request and passes this to the next middleware or returns a response
+  - if it returns a response the next middleware function will not be called 
+  - when we recieve a request at some point that will passed to a view at this point it will run through all the middleware functions
+  - ex: authentication middleware
+  - a request object at runtime will have an attributt called user (either an instance of the anonymous user class or a user object)
+- Customizing the user model
+  - Extend the user -> using inheritance we can create another model called AppUser that inherits from the user model
+    - -> we extend the user table -> any fields on here will be added to the user table
+    - Only use this for storing authentication related fields
+  - Create a profile -> create a 1:1 link with the user model using composition (profile model is composed of the user model) not inheritance
+    - Use this for storing any other fields that aren't related to authentication
+    - Ex: sales app can have a Customer profile, an HR app can have an Employee profile, ...
+- Always create a custom user module in the beginning of your project -> otherwise you'll have to nuke the db and rebuild it
+- Steps to extend the user model:
+  - Create a new model that extends AbstractUser
+  - In the setting model we set `AUTH_USER_MODEL`` to our new model (`core.User`)
+  - Then we stop referencing the user model directly but instead use `settings.AUTH_USER_MODEL`
+- Steps to create a user profile
+  - create a profile model (ex: Customer)
+  - in the profile model make a 1:1 field with the `settings.AUTH_USER_MODEL`
+- Groups -> can contain multiple permissions which we can assign users into
+  - ex: admin group, customer group, ...
+  - we can assign permissions to groups
+  - we can assign users to groups
+
+### Securing API Endpoints
+- We can secure our API endpoints by adding permissions to our views
+- Permissions are rules that determine whether a user can access a resource or not
+- This section:
+  - Token based authentication -> defacto standard for securing APIs
+  - Adding authentication endpoints to our APIs
+  - Allow users to register / login / logout
+  - Apply permissions to some of our endpoints so they're not accessible to anyone
+- Token based authentication
+  1. New user registers so on their machine this will send a request to the user endpoint (`/users`)
+  2. On our server we will create a account for them user with their username, password, email, ... (`{user}`)
+  3. The user needs to login -> the client app needs to send a request to the authentication endpoint (`/auth`) and it will send the username and password (`{un, pw}`) to the server and on the server we'll validate the user credentials -> if not valid we'll return an error but if valid -> we'll return a token (`{token}`) -> this token will be stored on the client machine to access protected resources and everytime they want to access a protected resource they will pass this token with the request to the server
+- djoser - useful package for user authentication: https://djoser.readthedocs.io/en/latest/ - but this is just an API layer a bunch of views, serializers and routes so we need an auth engine to do the actual work
+- auth engines: https://djoser.readthedocs.io/en/latest/authentication_backends.html
+  - token based authentication -> built in django rest framework -> uses a database table to store tokens, so everytime we receive a request on the server we need to query the database to check if the token is valid
+  - JSON web token authentication -> doesn't need a database -> because every token has a digital signature and on the server we can verify the signature without needing to query the database
+- Registering Users -> client app needs to send a post request to the `/users` endpoint with the user details in the body of the request
+
 
 ## Recommendations
 - Only use SQLite for development
