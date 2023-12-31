@@ -110,6 +110,9 @@ class Customer(models.Model):
         # ]
         # note: best not to mix migrations bc the names get shitty
         ordering = ['user__first_name', 'user__last_name']
+        permissions = [
+            ('view_history', 'Can view purchase history')
+        ]
 
     def __str__(self) -> str:
         # return f'Customer({str(self.__dict__)})'

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 from decouple import config
 
@@ -149,6 +150,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': [ # # https://www.django-rest-framework.org/api-guide/permissions/
+        # 'rest_framework.permissions.IsAuthenticated' # => all end points are closed to anonymous users
+        'rest_framework.permissions.AllowAny' # (default) => all end points are open to anonymous users
+    ],
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     # 'PAGE_SIZE': 10
@@ -158,4 +163,14 @@ AUTH_USER_MODEL = 'core.User'
 
 SIMPLE_JWT = {
    'AUTH_HEADER_TYPES': ('JWT',),
+   "ACCESS_TOKEN_LIFETIME": timedelta(days=1), # this is how you can change the token lifetimes
+   # but generally 5 minutes (the default) is good for access tokens and 1 day (the default) is good for refresh tokens
+}
+
+
+DJOSER = {
+    'SERIALIZERS': { # we can override the default serializers, see more here: https://djoser.readthedocs.io/en/latest/settings.html#serializers
+        'user_create': 'core.serializers.UserCreateSerializer',
+        'current_user': 'core.serializers.UserSerializer',
+    }
 }

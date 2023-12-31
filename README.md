@@ -181,7 +181,27 @@ python manage.py changepassword <username>
   - token based authentication -> built in django rest framework -> uses a database table to store tokens, so everytime we receive a request on the server we need to query the database to check if the token is valid
   - JSON web token authentication -> doesn't need a database -> because every token has a digital signature and on the server we can verify the signature without needing to query the database
 - Registering Users -> client app needs to send a post request to the `/users` endpoint with the user details in the body of the request
-
+- Creating User Profiles -> djoser can't handle this for us, we need to build it ourselves
+  - We can add this into the store app bc this is where we defined our customers
+- Logging in -> client app needs to send a post request to the `/auth/jwt/create` endpoint with the username and password in the body of the request
+  - then this will return 2 tokens: access token and refresh token
+    - access token -> used to access protected resources (valid for 5 mins by default)
+    - refresh token -> used to get a new access token when the access token expires (valid for 1 day by default)
+  - then these will need to be stored in the client - handled by the front end
+    - web apps -> stored in browsers local storage
+    - mobile apps -> stored in some other kind of local storage
+- logging out -> just need to remove the tokens from the client (because we're using jwt)
+- jwt (json web tokens) -> (see more here: https://jwt.io/)
+  - if tokens are valid -> return the user_id
+  - can a hacker regenerate this signature -> yes, but only if they get access to the secret key (which is stored on the server)
+- refreshing tokens
+  - if the clients needs to access a protected api endpoint it needs to send the access token in the header of the request
+  - but if the token is expired -> it will respond with a 401 error (unauthorized)
+  - then the client needs to send a post request to the `/auth/jwt/refresh` endpoint with the refresh token in the body of the request to get a new access token
+- Getting a user -> client app needs to send a get request to the `/auth/users/me` endpoint with the access token in the header of the request
+  - You can use [modheader](https://chromewebstore.google.com/detail/idgpnmonknjnojddfkpgkljpfnnfcklj) to add the header to the request
+  - Be sure to add JWT in front of the token, ex: `JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwidXNlcm5hbWUiOiJ0ZXN0IiwiZXhwIjoxNjA`
+- Permissions -> always add permissions to groups not ad hoc per user otherwise it gets really hard to see who has what permissions
 
 ## Recommendations
 - Only use SQLite for development
